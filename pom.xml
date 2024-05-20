@@ -11,9 +11,9 @@
 	<groupId>dev.obrienlabs</groupId>
 	<artifactId>eventstream-root</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>eventstream</name>
+	<name>eventstream-root</name>
 	<description>eventstream project</description>
-        <packaging>pom</packaging>
+    <packaging>pom</packaging>
 	<modules>
             <module>eventstream-nbi</module>
         </modules>
