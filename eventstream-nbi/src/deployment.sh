@@ -59,7 +59,11 @@ if [[ "$CREATE_PROJ" != false ]]; then
   # iam roles for service account
   
   # project services enablement
-  
+  gcloud services enable cloudfunctions.googleapis.com
+  gcloud services enable run.googleapis.com
+  gcloud services enable cloudbuild.googleapis.com
+
+
   # create bucket
 
   # create cloud function
@@ -76,7 +80,19 @@ fi
 
 # /deployment.sh -c false -d false -p true -b eventstream-biometric-old -s eventstream-biometric-3732
 if [[ "$PROVISION_PROJ" != false ]]; then
+cd functions
   echo "provisioning to ${STREAM_PROJECT_ID}"
+  gcloud functions deploy java-http-function \
+--gen2 \
+--allow-unauthenticated \
+--runtime=java17 \
+--region=us-central1 \
+--source=. \
+--entry-point=functions.EventstreamBiometricGet \
+--memory=512MB \
+--trigger-http 
+
+cd ..
 
 fi
 
