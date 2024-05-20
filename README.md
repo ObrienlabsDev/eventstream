@@ -2,7 +2,7 @@
 eventstream app
 
 ## GCP Serverless HTTP Endpoint
-- #5
+- https://github.com/ObrienlabsDev/eventstream/issues/6
 - eventstream-biometric-old
 ## GCP Default Docker Container
 ```
