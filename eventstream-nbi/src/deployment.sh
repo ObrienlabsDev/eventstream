@@ -29,21 +29,25 @@ if [[ "$CREATE_PROJ" != false ]]; then
   STREAM_PROJECT_ID=${STREAM_PROJECT_NAME_PREFIX}-${STREAM_PROJECT_RAND}
   echo "Creating project: $STREAM_PROJECT_ID"
 else
-  STREAM_PROJECT_ID=${STREAM_PROJECT_ID_PASSED}
+  #STREAM_PROJECT_ID=${STREAM_PROJECT_ID_PASSED}
   echo "Reusing project: $STREAM_PROJECT_ID"
 fi
 
 echo "STREAM_PROJECT_ID: $STREAM_PROJECT_ID"
-exit 1
+
 
 if [[ "$CREATE_PROJ" != false ]]; then
   # create project
   gcloud config set project "${BOOT_PROJECT_ID}"
   BILLING_FORMAT="--format=value(billingAccountName)"
   BILLING_ID=$(gcloud billing projects describe $BOOT_PROJECT_ID $BILLING_FORMAT | sed 's/.*\///')
-  gcloud beta billing projects link "${STREAM_PROJECT_ID}" --billing-account "${BILLING_ID}"
   ORG_ID=$(gcloud projects get-ancestors $BOOT_PROJECT_ID --format='get(id)' | tail -1)
-  
+  EMAIL=$(gcloud config list --format json|jq .core.account | sed 's/"//g')
+
+
+  echo "Creating KCC project: ${STREAM_PROJECT_ID} on folder: ${ROOT_FOLDER_ID}"
+  gcloud projects create "$STREAM_PROJECT_ID" --name="${STREAM_PROJECT_ID}" --set-as-default --folder="$ROOT_FOLDER_ID"
+
   gcloud beta billing projects link "${STREAM_PROJECT_ID}" --billing-account "${BILLING_ID}"  
   gcloud config set project "${STREAM_PROJECT_ID}"
 
@@ -67,8 +71,22 @@ if [[ "$CREATE_PROJ" != false ]]; then
   # RETURN
   gcloud config set project "${BOOT_PROJECT_ID}"  
 
+fi
 
 
+# /deployment.sh -c false -d false -p true -b eventstream-biometric-old -s eventstream-biometric-3732
+if [[ "$PROVISION_PROJ" != false ]]; then
+  echo "provisioning to ${STREAM_PROJECT_ID}"
+
+fi
+
+
+
+if [[ "$DELETE_PROJ" != false ]]; then
+  # disable billing before deletion - to preserve the project/billing quota
+  gcloud alpha billing projects unlink "${STREAM_PROJECT_ID}"
+  # delete cc project
+  gcloud projects delete "$STREAM_PROJECT_ID" --quiet
 fi
 
 
@@ -86,9 +104,10 @@ fi
 UNIQUE=old
 CREATE_PROJ=false
 DELETE_PROJ=false
+PROVISION_PROJ=false
 STREAM_PROJECT_ID=
 BOOT_PROJECT_ID=
-while getopts ":c:d:b:u:" PARAM; do
+while getopts ":c:d:b:p:s:u:" PARAM; do
   case $PARAM in
     c)
       CREATE_PROJ=${OPTARG}
@@ -96,8 +115,14 @@ while getopts ":c:d:b:u:" PARAM; do
     d)
       DELETE_PROJ=${OPTARG}
       ;;
+    p)
+      PROVISION_PROJ=${OPTARG}
+      ;;
     b)
       BOOT_PROJECT_ID=${OPTARG}
+      ;;
+    s)
+      STREAM_PROJECT_ID=${OPTARG}
       ;;
     ?)
       usage
@@ -115,5 +140,5 @@ if [[ -z $UNIQUE ]]; then
 fi
 
 echo "existing project: $PROJECT_ID"
-deployment "$CREATE_PROJ" "$DELETE_PROJ" "$BOOT_PROJECT_ID"
+deployment "$CREATE_PROJ" "$DELETE_PROJ" "$PROVISION_PROJ" "$BOOT_PROJECT_ID" "$STREAM_PROJECT_ID"
 printf "**** Done ****\n"
