@@ -98,7 +98,7 @@ if [[ "$PROVISION_PROJ" != false ]]; then
  echo "PROJECT_NUMBER: $PROJECT_NUMBER"
  SA_EMAIL=$PROJECT_NUMBER-compute@developer.gserviceaccount.com
  echo "bind $SA_EMAIL"
- gcloud organizations add-iam-policy-binding "${ORG_ID}" --member="serviceAccount:${SA_EMAIL}" --role=roles/logging.logWriter --condition=None -quiet
+ gcloud organizations add-iam-policy-binding "${ORG_ID}" --member="serviceAccount:${SA_EMAIL}" --role=roles/logging.logWriter --condition=None --quiet
  
 cd ../
   echo "provisioning to ${STREAM_PROJECT_ID}"
