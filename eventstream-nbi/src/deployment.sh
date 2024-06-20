@@ -1,6 +1,7 @@
 #!/bin/bash
 #
-
+# see https://github.com/ObrienlabsDev/biometric-gcp-functions/tree/main
+# and older https://github.com/ObrienlabsDev/eventstream/issues/6
 # for eash of override - key/value pairs for constants - shared by all scripts
 
 
@@ -101,13 +102,13 @@ if [[ "$PROVISION_PROJ" != false ]]; then
  
 cd ../
   echo "provisioning to ${STREAM_PROJECT_ID}"
-  gcloud functions deploy java-http-function \
+  gcloud functions deploy ${HTTP_FUNCTION_NAME} \
 --gen2 \
 --allow-unauthenticated \
 --runtime=java17 \
 --region=us-central1 \
 --source=. \
---entry-point=functions.EventstreamBiometricGet \
+--entry-point=${JAVA_FQ_CLASSNAME} \
 --memory=512MB \
 --trigger-http 
 
