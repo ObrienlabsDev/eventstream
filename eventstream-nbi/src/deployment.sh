@@ -42,7 +42,8 @@ if [[ "$CREATE_PROJ" != false ]]; then
   BILLING_FORMAT="--format=value(billingAccountName)"
   BILLING_ID=$(gcloud billing projects describe $BOOT_PROJECT_ID $BILLING_FORMAT | sed 's/.*\///')
   ORG_ID=$(gcloud projects get-ancestors $BOOT_PROJECT_ID --format='get(id)' | tail -1)
-  EMAIL=$(gcloud config list --format json|jq .core.account | sed 's/"//g')
+  #EMAIL=$(gcloud config list --format json|jq .core.account | sed 's/"//g')
+  EMAIL=$SUPER_ADMIN_EMAIL
 
 
   echo "Creating KCC project: ${STREAM_PROJECT_ID} on folder: ${ROOT_FOLDER_ID}"
@@ -50,7 +51,8 @@ if [[ "$CREATE_PROJ" != false ]]; then
 
   gcloud beta billing projects link "${STREAM_PROJECT_ID}" --billing-account "${BILLING_ID}"  
   gcloud config set project "${STREAM_PROJECT_ID}"
-
+  echo "current project switched to "
+  gcloud config get project
   
   # service account
 
@@ -62,6 +64,8 @@ if [[ "$CREATE_PROJ" != false ]]; then
   gcloud services enable cloudfunctions.googleapis.com
   gcloud services enable run.googleapis.com
   gcloud services enable cloudbuild.googleapis.com
+  gcloud services enable artifactregistry.googleapis.com
+
 
 
   # create bucket
@@ -80,7 +84,22 @@ fi
 
 # /deployment.sh -c false -d false -p true -b eventstream-biometric-old -s eventstream-biometric-3732
 if [[ "$PROVISION_PROJ" != false ]]; then
-cd functions
+
+  gcloud config set project "${STREAM_PROJECT_ID}"
+  echo "current project switched to "
+  gcloud config get project
+  
+#cd main/java/functions
+# The service account running this build does not have permission to write logs. To fix this, grant the Logs Writer (roles/logging.logWriter) role to the service account.
+# set roles/logging.logWriter on project id service account - -compute@developer.gserviceaccount.com
+
+ PROJECT_NUMBER=$(gcloud projects list --filter="${STREAM_PROJECT_ID}" '--format=value(PROJECT_NUMBER)')
+ echo "PROJECT_NUMBER: $PROJECT_NUMBER"
+ SA_EMAIL=$PROJECT_NUMBER-compute@developer.gserviceaccount.com
+ echo "bind $SA_EMAIL"
+ gcloud organizations add-iam-policy-binding "${ORG_ID}" --member="serviceAccount:${SA_EMAIL}" --role=roles/logging.logWriter --condition=None -quiet
+ 
+cd ../
   echo "provisioning to ${STREAM_PROJECT_ID}"
   gcloud functions deploy java-http-function \
 --gen2 \
@@ -92,7 +111,8 @@ cd functions
 --memory=512MB \
 --trigger-http 
 
-cd ..
+#cd ../../../
+cd src
 
 fi
 
